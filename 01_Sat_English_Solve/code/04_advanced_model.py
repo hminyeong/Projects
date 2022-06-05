@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import dill
 from copy import deepcopy
 import time
@@ -25,9 +22,6 @@ from torchtext.data import BucketIterator
 from torchtext.data import Iterator
 
 
-# In[2]:
-
-
 RANDOM_SEED = 2020
 torch.manual_seed(RANDOM_SEED)
 torch.backends.cudnn.deterministic = True
@@ -35,15 +29,10 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-# DATA_PATH = "data/processed/"
-DATA_PATH = "/content/"
+DATA_PATH = "../data/processed/"
 
 
 # ## 데이터 불러오기
-
-# In[3]:
-
-
 TEXT = Field(
     sequential=True,
     use_vocab=True,
@@ -60,9 +49,9 @@ LABEL = Field(
 
 cola_train_data, cola_valid_data, cola_test_data = TabularDataset.splits(
     path=DATA_PATH,
-    train="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/cola_train.tsv",
-    validation="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/cola_valid.tsv",
-    test="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/cola_test.tsv",
+    train="cola_train.tsv",
+    validation="cola_valid.tsv",
+    test="cola_test.tsv",
     format="tsv",
     fields=[("text", TEXT), ("label", LABEL)],
     skip_header=1
@@ -81,9 +70,9 @@ cola_train_iterator, cola_valid_iterator, cola_test_iterator = BucketIterator.sp
 
 sat_train_data, sat_valid_data, sat_test_data = TabularDataset.splits(
     path=DATA_PATH,
-    train="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/sat_train.csv",
-    validation="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/sat_valid.csv",
-    test="/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/processed/sat_test.csv",
+    train="sat_train.csv",
+    validation="sat_valid.csv",
+    test="sat_test.csv",
     format="tsv",
     fields=[("text", TEXT), ("label", LABEL)],
     skip_header=1
@@ -98,10 +87,6 @@ sat_train_iterator, sat_valid_iterator, sat_test_iterator = BucketIterator.split
 
 
 # ## LSTM Pooling Classifier
-
-# In[4]:
-
-
 class LSTMPoolingClassifier(nn.Module):
     def __init__(self, num_embeddings, embedding_dim, hidden_size, num_layers, pad_idx):
         super(LSTMPoolingClassifier, self).__init__()
@@ -124,9 +109,6 @@ class LSTMPoolingClassifier(nn.Module):
         pool = self.dropout(pool)
         output = self.sigmoid(self.pool2o(pool))
         return output.squeeze()
-
-
-# In[5]:
 
 
 def train(model: nn.Module,
@@ -214,10 +196,6 @@ def epoch_time(start_time: int,
 
 
 # ## CoLA 데이터를 이용해 사전 학습
-
-# In[6]:
-
-
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 N_EPOCHS = 20
 
@@ -254,17 +232,11 @@ for epoch in range(N_EPOCHS):
     print(f'\t Val. Loss: {valid_loss:.5f}')
 
 
-# In[7]:
-
 
 before_tuning_lstm_pool_classifier = deepcopy(lstm_pool_classifier)
 
 
 # ## 수능 데이터를 이용해 추가 학습 (Fine-Tune)
-
-# In[8]:
-
-
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 N_EPOCHS = 20
 
@@ -286,10 +258,6 @@ for epoch in range(N_EPOCHS):
 
 
 # ## 모델 성능 확인하기
-
-# In[9]:
-
-
 _ = before_tuning_lstm_pool_classifier.cpu()
 _ = lstm_pool_classifier.cpu()
 
@@ -300,10 +268,7 @@ print(f"Before fine-tuning SAT Dataset Test AUROC: {pool_sat_test_auroc:.5f}")
 print(f"After fine-tuning SAT Dataset Test AUROC: {pool_tuned_test_auroc:.5f}")
 
 
-# In[10]:
-
-
-with open("/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_advanced_before_tuning_model.dill", "wb") as f:
+with open("../save_model/sat_advanced_before_tuning_model.dill", "wb") as f:
     model = {
         "TEXT": TEXT,
         "LABEL": LABEL,
@@ -311,7 +276,7 @@ with open("/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/
     }
     dill.dump(model, f)
 
-with open("/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_advanced_after_tuning_model.dill", "wb") as f:
+with open("../save_model/sat_advanced_after_tuning_model.dill", "wb") as f:
     model = {
         "TEXT": TEXT,
         "LABEL": LABEL,
