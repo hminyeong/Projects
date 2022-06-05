@@ -16,7 +16,7 @@ import pandas as pd
 
 # sat_data = pd.read_csv("/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/data/raw/all_data.csv")
 
-sat_data = pd.read_csv("../data/raw/sat_problems.csv")
+sat_data = pd.read_csv("../data/sat/sat_problems.csv")
 sat_data = sat_data[sat_data["question"].map(lambda x: "어법" in x)]
 
 
@@ -78,9 +78,9 @@ sat_test.to_csv("../data/processed/sat_test.tsv", sep="\t", index=False)
 
 
 columns = ["source", "label", "original_judgement", "context"]
-in_domian_train = pd.read_csv("../data/raw/cola/in_domain_train.tsv", sep="\t", header=None, names=columns)
-in_domian_dev = pd.read_csv("../data/raw/cola/in_domain_dev.tsv", sep="\t", header=None, names=columns)
-out_of_domian_dev = pd.read_csv("../data/raw/cola/out_of_domain_dev.tsv", sep="\t", header=None, names=columns)
+in_domian_train = pd.read_csv("../data/cola/in_domain_train.tsv", sep="\t", header=None, names=columns)
+in_domian_dev = pd.read_csv("../data/cola/in_domain_dev.tsv", sep="\t", header=None, names=columns)
+out_of_domian_dev = pd.read_csv("../data/cola/out_of_domain_dev.tsv", sep="\t", header=None, names=columns)
 
 
 # In[25]:
