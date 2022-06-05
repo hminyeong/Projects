@@ -30,7 +30,7 @@ np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
 # DATA_PATH = "data/processed/"
-DATA_PATH = "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/"
+DATA_PATH = "../save_model/"
 
 
 # In[3]:
@@ -98,7 +98,7 @@ def test(model_path):
         model = dill.load(f)
 
     sat_test_data = TabularDataset(
-        path=f"/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/data/processed/sat_test.tsv",
+        path=f"../data/processed/sat_test.tsv",
         format="tsv",
         fields=[("text", model["TEXT"]), ("label", model["LABEL"])],
         skip_header=1
@@ -145,11 +145,7 @@ def test(model_path):
 #     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_advanced_after_tuning_model.dill",
 # ]
 model_list = [
-    "sat_baseline_model.dill",
-    "sat_before_tuning_model.dill",
-    "sat_after_tuning_model.dill",
-    "sat_advanced_before_tuning_model.dill",
-    "sat_advanced_after_tuning_model.dill",
+    "../save_model/sat_baseline_model.dill",
 ]
 
 test_auroc = []
@@ -228,18 +224,18 @@ print(a)
 # In[12]:
 
 
-problem_2 = [
-    "People from more individualistic cultural contexts tend to be motivated to maintain self-focused agency or control 1 as these serve as the basis of one’s self-worth.",
-    "With this form of agency comes the belief that individual successes 2 depending primarily on one’s own abilities and actions, and thus, whether by influencing the environment or trying to accept one’s circumstances, the use of control ultimately centers on the individual.",
-    "The independent self may be more 3 driven to cope by appealing to a sense of agency or control.",
-    "Research has shown 4 that East Asians prefer to receive, but not seek, more social support rather than seek personal control in certain cases.",
-    "Therefore, people 5 who hold a more interdependent self-construal may prefer to cope in a way that promotes harmony in relationships.",
-]
-problem_2_label = [1, 0, 1, 1, 1]
-
-# In[13]:
-
-
-b = predict_problem_with_models(model_list, problem_2).loc[
-    map(lambda x: x[0], test_auroc)]
-print(b)
+# problem_2 = [
+#     "People from more individualistic cultural contexts tend to be motivated to maintain self-focused agency or control 1 as these serve as the basis of one’s self-worth.",
+#     "With this form of agency comes the belief that individual successes 2 depending primarily on one’s own abilities and actions, and thus, whether by influencing the environment or trying to accept one’s circumstances, the use of control ultimately centers on the individual.",
+#     "The independent self may be more 3 driven to cope by appealing to a sense of agency or control.",
+#     "Research has shown 4 that East Asians prefer to receive, but not seek, more social support rather than seek personal control in certain cases.",
+#     "Therefore, people 5 who hold a more interdependent self-construal may prefer to cope in a way that promotes harmony in relationships.",
+# ]
+# problem_2_label = [1, 0, 1, 1, 1]
+#
+# # In[13]:
+#
+#
+# b = predict_problem_with_models(model_list, problem_2).loc[
+#     map(lambda x: x[0], test_auroc)]
+# print(b)

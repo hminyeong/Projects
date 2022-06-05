@@ -36,7 +36,6 @@ random.seed(RANDOM_SEED)
 # DATA_PATH = "data/processed/"
 DATA_PATH = "../data/processed/"
 
-
 # ## 데이터 불러오기
 # - `torchtext.Field`를 이용해 각각의 필드를 정의해줍니다.
 
@@ -64,9 +63,9 @@ LABEL = Field(
 
 sat_train_data, sat_valid_data, sat_test_data = TabularDataset.splits(
     path=DATA_PATH,
-    train="sat_train.csv",
-    validation="sat_valid.csv",
-    test="sat_test.csv",
+    train="sat_train.tsv",
+    validation="sat_valid.tsv",
+    test="sat_test.tsv",
     format="tsv",
     fields=[("text", TEXT), ("label", LABEL)],
     skip_header=1,
@@ -241,7 +240,7 @@ print(f"SAT Dataset Test AUROC: {test_auroc:.5f}")
 # In[9]:
 
 
-with open("../model/sat_baseline_model.dill", "wb") as f:
+with open("../save_model/sat_baseline_model.dill", "wb") as f:
     model = {
         "TEXT": TEXT,
         "LABEL": LABEL,
