@@ -2,6 +2,7 @@
 # coding: utf-8
 
 # In[1]:
+import os.path
 
 import dill
 import time
@@ -22,8 +23,20 @@ from torchtext.data import TabularDataset  # 데이터셋 만들기
 from torchtext.data import BucketIterator  # 모든 텍스트 작업을 일괄로 처리하고 단어를 인덱스 숫자로 변환 하는것을 도움
 from torchtext.data import Iterator  # 토치텍스트의 데이터로더 만들기
 
+import torch
+from torch.utils.tensorboard import SummaryWriter
+writer = SummaryWriter()
+writer = SummaryWriter('logs/')
 
-# In[2]:
+def DeleteAllFiles(filePath):
+    if os.path.exists(filePath):
+        for file in os.scandir(filePath):
+            os.remove(file.path)
+        return 'Remove All File'
+    else:
+        return 'Directory Not Found'
+
+print(DeleteAllFiles('logs/'))
 
 
 RANDOM_SEED = 2020
@@ -33,15 +46,11 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-# DATA_PATH = "data/processed/"
 DATA_PATH = "../data/processed/"
+
 
 # ## 데이터 불러오기
 # - `torchtext.Field`를 이용해 각각의 필드를 정의해줍니다.
-
-# In[3]:
-
-
 TEXT = Field(
     sequential=True,
     use_vocab=True,
@@ -57,10 +66,6 @@ LABEL = Field(
 
 
 # 수능 데이터를 불러오는 코드입니다. `DATA_PATH`가 데이터가 있는 폴더로 정확히 입력되어 있는지 확인해주세요.
-
-# In[4]:
-
-
 sat_train_data, sat_valid_data, sat_test_data = TabularDataset.splits(
     path=DATA_PATH,
     train="sat_train.tsv",
@@ -82,10 +87,6 @@ TEXT.build_vocab(sat_train_data, min_freq=2)
 
 
 # ## LSTM Classifier
-
-# In[5]:
-
-
 class LSTMClassifier(nn.Module):
     def __init__(self, num_embeddings, embedding_dim, hidden_size, num_layers, pad_idx):
         super().__init__()
@@ -99,11 +100,11 @@ class LSTMClassifier(nn.Module):
             hidden_size=hidden_size,
             num_layers=num_layers,
             bidirectional=True,
-            dropout=0.5
+            dropout=0.4  # 0.5
         )
         self.last_layer = nn.Sequential(
             nn.Linear(hidden_size * 2, hidden_size),
-            nn.Dropout(0.5),
+            nn.Dropout(0.5),  # 0.5
             nn.LeakyReLU(),
             nn.Linear(hidden_size, 1),
             nn.Sigmoid(),
@@ -118,10 +119,6 @@ class LSTMClassifier(nn.Module):
 
 
 # Train, Evaluate, Test 를 정의합니다.
-
-# In[6]:
-
-
 def train(model: nn.Module, iterator: Iterator, optimizer: torch.optim.Optimizer, criterion: nn.Module, device: str):
     model.train()
     epoch_loss = 0
@@ -136,10 +133,12 @@ def train(model: nn.Module, iterator: Iterator, optimizer: torch.optim.Optimizer
             label = label.to(device)
             output = model(text).flatten()
             loss = criterion(output, label)
+            writer.add_scalar("Loss/train", loss, epoch)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
 
+    writer.close()
     return epoch_loss / len(iterator)
 
 
@@ -189,10 +188,6 @@ def epoch_time(start_time: int, end_time: int):
 
 
 # ## 모델 학습하기
-
-# In[7]:
-
-
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 N_EPOCHS = 20
 
@@ -227,24 +222,15 @@ for epoch in range(N_EPOCHS):
     print(f"\tTrain Loss: {train_loss:.5f}")
     print(f"\t Val. Loss: {valid_loss:.5f}")
 
-
-# In[8]:
-
-
 _ = lstm_classifier.cpu()
 test_auroc = test(lstm_classifier, sat_test_iterator, "cpu")
 
 print(f"SAT Dataset Test AUROC: {test_auroc:.5f}")
 
-
-# In[9]:
-
-
-with open("../save_model/sat_baseline_model.dill", "wb") as f:
+with open("../save_model/sat_baseline_model_1.dill", "wb") as f:
     model = {
         "TEXT": TEXT,
         "LABEL": LABEL,
         "classifier": lstm_classifier
     }
     dill.dump(model, f)
-

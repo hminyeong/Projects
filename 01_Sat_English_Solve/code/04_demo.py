@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import dill
 import random
 import pandas as pd
@@ -19,8 +16,6 @@ from nltk.tokenize import word_tokenize
 from torchtext.data import TabularDataset
 from torchtext.data import BucketIterator
 
-# In[2]:
-
 
 RANDOM_SEED = 2020
 torch.manual_seed(RANDOM_SEED)
@@ -29,11 +24,7 @@ torch.backends.cudnn.benchmark = False
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-# DATA_PATH = "data/processed/"
 DATA_PATH = "../save_model/"
-
-
-# In[3]:
 
 
 class LSTMClassifier(nn.Module):
@@ -90,9 +81,6 @@ class LSTMPoolingClassifier(nn.Module):
         return output.squeeze()
 
 
-# In[6]:
-
-
 def test(model_path):
     with open(model_path, "rb") as f:
         model = dill.load(f)
@@ -133,19 +121,11 @@ def test(model_path):
 
     return auroc.round(5)
 
-
-# In[7]:
-
-
-# model_list = [
-#     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_baseline_model.dill",
-#     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_before_tuning_model.dill",
-#     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_after_tuning_model.dill",
-#     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_advanced_before_tuning_model.dill",
-#     "/opt/ml/input/my/deep-learning-with-projects/08_수능_영어_풀기/minyeong/model/sat_advanced_after_tuning_model.dill",
-# ]
+# "../save_model/sat_baseline_model.dill",
 model_list = [
     "../save_model/sat_baseline_model.dill",
+    "../save_model/sat_before_tuning_model.dill",
+    "../save_model/sat_after_tuning_model.dill",
 ]
 
 test_auroc = []
@@ -154,15 +134,10 @@ for file_name in model_list:
     auroc = test(file_name)
     test_auroc += [(model_name, auroc)]
 
-# In[8]:
-
 
 test_auroc = sorted(test_auroc, key=lambda x: x[1], reverse=True)
 for rank, (model_name, auroc) in enumerate(test_auroc):
     print(f"Rank {rank + 1} - {model_name:30} - Test AUROC: {auroc:.5f}")
-
-
-# In[9]:
 
 
 def predict_problem(model_path, problem):
@@ -202,40 +177,31 @@ def predict_problem_with_models(model_list, problem):
     return pd.concat([selected_answer, score_df], 1)
 
 
-# In[10]:
+
+problem_202106 = [
+    "People from more individualistic cultural contexts tend to be motivated to maintain self-focused agency or control 1 as these serve as the basis of one’s self-worth.",
+    "With this form of agency comes the belief that individual successes 2 depending primarily on one’s own abilities and actions, and thus, whether by influencing the environment or trying to accept one’s circumstances, the use of control ultimately centers on the individual.",
+    "The independent self may be more 3 driven to cope by appealing to a sense of agency or control.",
+    "Research has shown 4 that East Asians prefer to receive, but not seek, more social support rather than seek personal control in certain cases.",
+    "Therefore, people 5 who hold a more interdependent self-construal may prefer to cope in a way that promotes harmony in relationships.",
+]
+problem_202106_label = [1, 0, 1, 1, 1]
+
+b = predict_problem_with_models(model_list, problem_202106).loc[map(lambda x: x[0], test_auroc)]
+print(b)
 
 
-problem_1 = [
+problem_202109 = [
     "Competitive activities can be more than just performance showcases which the best is recognized and the rest are overlooked.",
     "The provision of timely, constructive feedback to participants on performance is an asset that some competitions and contests offer.",
     "The provision of that type of feedback can be interpreted as shifting the emphasis to demonstrating superior performance but not necessarily excellence.",
     "The emphasis on superiority is what we typically see as fostering a detrimental effect of competition.",
     "Information about performance can be very helpful, not only to the participant who does not win or place but also to those who do.",
 ]
-problem_1_label = [0, 1, 1, 1, 1]
+problem_202109_label = [0, 1, 1, 1, 1]
 
-# In[11]:
-
-
-a = predict_problem_with_models(model_list, problem_1).loc[
-    map(lambda x: x[0], test_auroc)]
+a = predict_problem_with_models(model_list, problem_202109).loc[map(lambda x: x[0], test_auroc)]
 print(a)
 
-# In[12]:
 
 
-# problem_2 = [
-#     "People from more individualistic cultural contexts tend to be motivated to maintain self-focused agency or control 1 as these serve as the basis of one’s self-worth.",
-#     "With this form of agency comes the belief that individual successes 2 depending primarily on one’s own abilities and actions, and thus, whether by influencing the environment or trying to accept one’s circumstances, the use of control ultimately centers on the individual.",
-#     "The independent self may be more 3 driven to cope by appealing to a sense of agency or control.",
-#     "Research has shown 4 that East Asians prefer to receive, but not seek, more social support rather than seek personal control in certain cases.",
-#     "Therefore, people 5 who hold a more interdependent self-construal may prefer to cope in a way that promotes harmony in relationships.",
-# ]
-# problem_2_label = [1, 0, 1, 1, 1]
-#
-# # In[13]:
-#
-#
-# b = predict_problem_with_models(model_list, problem_2).loc[
-#     map(lambda x: x[0], test_auroc)]
-# print(b)
