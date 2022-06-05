@@ -50,7 +50,7 @@ class LSTMClassifier(nn.Module):
 
 
 model_list = [
-    "../model/sat_baseline_model.dill",
+    "sat_baseline_model.dill",
     # "sat_before_tuning_model.dill",
     # "sat_after_tuning_model.dill",
     # "sat_advanced_before_tuning_model.dill",
@@ -118,7 +118,7 @@ from streamlit_timeline import timeline
 
 
 # load data
-with open('example.json', "r") as f:
+with open('example.json', "r", encoding="utf-8") as f:
     data = f.read()
 
 import time as ts
@@ -149,9 +149,9 @@ def main():
         st.write(" ")
         st.write(" ")
 
-        st.write("민영")
-        col2.subheader("민영")
-        val = st.time_input("Set Timer", value=time(0, 0, 0))
+        # st.write("민영")
+        # col2.subheader("민영")
+        val = st.time_input("시간을 맞춰놓고 문제를 풀어보세요. (2:30초 권장)", value=time(0, 0, 0))
         if str(val) == "00:00:00":
             st.write("Please sent timer")
         else:
@@ -159,7 +159,7 @@ def main():
             bar = st.progress(0)
             per = sec / 100
             progress_status = st.empty()
-            if st.button("start"):
+            if st.button("start!"):
                 for i in range(100):
                     bar.progress((i * 1))
                     progress_status.write((str(i + 1) + " %"))
@@ -168,7 +168,7 @@ def main():
             answer = ""
             if st.button("Predict"):
                 answer = predict_problem_with_models(model_list, problem_1)
-                st.write(f'인공지능 예측 정답: {answer}번')
+                st.write(f'인공지능이 예측한 정답은 : {answer}번이에요.')
 
 
 if __name__ == '__main__':
