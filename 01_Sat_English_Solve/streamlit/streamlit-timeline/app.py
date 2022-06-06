@@ -167,7 +167,7 @@ import streamlit as st
 
 
 # load data
-with open('example.json', "r", encoding="utf-8") as f:
+with open('../example.json', "r", encoding="utf-8") as f:
     data = f.read()
 
 import time as ts
