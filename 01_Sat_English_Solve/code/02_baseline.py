@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1]:
+# %%
 import os.path
-
 import dill
 import time
 import random
 import numpy as np
+import pandas as pd
 from sklearn.metrics import roc_curve, auc
 
 import nltk
@@ -18,39 +15,38 @@ from nltk.tokenize import word_tokenize
 import torch
 import torch.nn as nn
 
-from torchtext.data import Field  # 필드 정의하기
-from torchtext.data import TabularDataset  # 데이터셋 만들기
-from torchtext.data import BucketIterator  # 모든 텍스트 작업을 일괄로 처리하고 단어를 인덱스 숫자로 변환 하는것을 도움
-from torchtext.data import Iterator  # 토치텍스트의 데이터로더 만들기
-
-import torch
-from torch.utils.tensorboard import SummaryWriter
-writer = SummaryWriter()
-writer = SummaryWriter('logs/')
-
-def DeleteAllFiles(filePath):
-    if os.path.exists(filePath):
-        for file in os.scandir(filePath):
-            os.remove(file.path)
-        return 'Remove All File'
-    else:
-        return 'Directory Not Found'
-
-print(DeleteAllFiles('logs/'))
+from torchtext.data import Field
+from torchtext.data import TabularDataset
+from torchtext.data import BucketIterator
+from torchtext.data import Iterator
 
 
+# %%
 RANDOM_SEED = 2020
-torch.manual_seed(RANDOM_SEED) # manual_seed: pytorch에서 random seed를 고정하기 위한 함수
+torch.manual_seed(RANDOM_SEED)
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
 np.random.seed(RANDOM_SEED)
 random.seed(RANDOM_SEED)
 
-DATA_PATH = "../data/processed/"
+if torch.cuda.is_available():
+    # CPU Local
+    print("CPU Local")
+    train = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/train.csv")
+    valid = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/valid.csv")
+    test = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/test.csv")
+else:
+    # GPU
+    print("GPU")
+    train = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/train.csv")
+    valid = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/valid.csv")
+    test = pd.read_csv("C:/Users/alsdu/Desktop/수능_Project/data/raw/test.csv")
+
+DATA_PATH = "/root/수능_영어_풀기/2_try/"
 
 
-# ## 데이터 불러오기
-# - `torchtext.Field`를 이용해 각각의 필드를 정의해줍니다.
+## 데이터 불러오기
+# %%
 TEXT = Field(
     sequential=True,
     use_vocab=True,
@@ -65,12 +61,12 @@ LABEL = Field(
 )
 
 
-# 수능 데이터를 불러오는 코드입니다. `DATA_PATH`가 데이터가 있는 폴더로 정확히 입력되어 있는지 확인해주세요.
+# %%
 sat_train_data, sat_valid_data, sat_test_data = TabularDataset.splits(
     path=DATA_PATH,
-    train="sat_train.tsv",
-    validation="sat_valid.tsv",
-    test="sat_test.tsv",
+    train="train.tsv",
+    validation="valid.tsv",
+    test="test.tsv",
     format="tsv",
     fields=[("text", TEXT), ("label", LABEL)],
     skip_header=1,
@@ -86,25 +82,18 @@ sat_train_iterator, sat_valid_iterator, sat_test_iterator = BucketIterator.split
 TEXT.build_vocab(sat_train_data, min_freq=2)
 
 
-# ## LSTM Classifier
+## LSTM Classifier
+# %%
 class LSTMClassifier(nn.Module):
     def __init__(self, num_embeddings, embedding_dim, hidden_size, num_layers, pad_idx):
         super().__init__()
-        self.embed_layer = nn.Embedding(
-            num_embeddings=num_embeddings,
-            embedding_dim=embedding_dim,
-            padding_idx=pad_idx
-        )
+        self.embed_layer = nn.Embedding(num_embeddings=num_embeddings, embedding_dim=embedding_dim, padding_idx=pad_idx)
         self.lstm_layer = nn.LSTM(
-            input_size=embedding_dim,
-            hidden_size=hidden_size,
-            num_layers=num_layers,
-            bidirectional=True,
-            dropout=0.4  # 0.5
+            input_size=embedding_dim, hidden_size=hidden_size, num_layers=num_layers, bidirectional=True, dropout=0.5
         )
         self.last_layer = nn.Sequential(
             nn.Linear(hidden_size * 2, hidden_size),
-            nn.Dropout(0.5),  # 0.5
+            nn.Dropout(0.5),
             nn.LeakyReLU(),
             nn.Linear(hidden_size, 1),
             nn.Sigmoid(),
@@ -118,7 +107,7 @@ class LSTMClassifier(nn.Module):
         return last_output
 
 
-# Train, Evaluate, Test 를 정의합니다.
+# %%
 def train(model: nn.Module, iterator: Iterator, optimizer: torch.optim.Optimizer, criterion: nn.Module, device: str):
     model.train()
     epoch_loss = 0
@@ -133,12 +122,10 @@ def train(model: nn.Module, iterator: Iterator, optimizer: torch.optim.Optimizer
             label = label.to(device)
             output = model(text).flatten()
             loss = criterion(output, label)
-            writer.add_scalar("Loss/train", loss, epoch)
             loss.backward()
             optimizer.step()
             epoch_loss += loss.item()
 
-    writer.close()
     return epoch_loss / len(iterator)
 
 
@@ -187,7 +174,8 @@ def epoch_time(start_time: int, end_time: int):
     return elapsed_mins, elapsed_secs
 
 
-# ## 모델 학습하기
+## 모델 학습
+# %%
 PAD_IDX = TEXT.vocab.stoi[TEXT.pad_token]
 N_EPOCHS = 20
 
@@ -222,12 +210,14 @@ for epoch in range(N_EPOCHS):
     print(f"\tTrain Loss: {train_loss:.5f}")
     print(f"\t Val. Loss: {valid_loss:.5f}")
 
+# %%
 _ = lstm_classifier.cpu()
 test_auroc = test(lstm_classifier, sat_test_iterator, "cpu")
 
 print(f"SAT Dataset Test AUROC: {test_auroc:.5f}")
 
-with open("../save_model/sat_baseline_model_1.dill", "wb") as f:
+# %%
+with open("/root/수능_영어_풀기/2_try/baseline_model.dill", "wb") as f:
     model = {
         "TEXT": TEXT,
         "LABEL": LABEL,
